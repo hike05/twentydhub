@@ -16,7 +16,7 @@ volumes:
 
 containers:
 
-    changevolownership:
+    change_vol_ownership:
         image: ubuntu
         replicas: 1
         user: root
