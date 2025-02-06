@@ -4,14 +4,14 @@ environment:
 
 volumes:
   docker-data:
-        type: ssd
-        size: 1GiB
-    db-data:
-        type: ssd
-        size: 1GiB
-    server-local-data:
-        type: ssd
-        size: 1GiB
+    type: ssd
+    size: 1GiB
+  db-data:
+    type: ssd
+    size: 1GiB
+  server-local-data:
+    type: ssd
+    size: 1GiB
 
 containers:
   change-vol-ownership:
