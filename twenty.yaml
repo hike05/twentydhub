@@ -2,135 +2,135 @@ version: 1
 
 volumes:
 
-  docker-data:
-    type: ssd
-    size: 1GiB
+    docker-data:
+        type: ssd
+        size: 1GiB
 
-  db-data:
-    type: ssd
-    size: 1GiB
+    db-data:
+        type: ssd
+        size: 1GiB
 
-  server-local-data:
-    type: ssd
-    size: 1GiB
+    server-local-data:
+        type: ssd
+        size: 1GiB
 
 containers:
 
-  change-vol-ownership:
-    image: ubuntu
-    replicas: 1
-    user: root
-    resources:
-      memory: 64MiB
-    volumes:
-      - name: server-local-data
-        mountPath: /tmp/server-local-data
-        subPath: server-local-data
-      - name: docker-data
-        mountPath: /tmp/docker-data
-        subPath: docker-data
-    command: 
-      bash -c "
-      chown -R 1000:1000 /tmp/server-local-data
-      && chown -R 1000:1000 /tmp/docker-data"
+    changevolownership:
+        image: ubuntu
+        replicas: 1
+        user: root
+        resources:
+        memory: 64MiB
+        volumes:
+        -   name: server-local-data
+            mountPath: /tmp/server-local-data
+            subPath: server-local-data
+        -   name: docker-data
+            mountPath: /tmp/docker-data
+            subPath: docker-data
+        command: 
+            bash -c "
+            chown -R 1000:1000 /tmp/server-local-data
+            && chown -R 1000:1000 /tmp/docker-data"
 
-  server:
-    image: twentycrm/twenty:${TAG:-latest}
-    replicas: 1
-    resources:
-      memory: 256MiB
-    ports:
-      - 3000
-    environment:
-      PORT: 3000
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
-      SERVER_URL: http://127.0.0.1:3000
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      STORAGE_TYPE: ${STORAGE_TYPE}
-      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
-      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
-      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-      MESSAGING_PROVIDER_GMAIL_ENABLED: true
-      CALENDAR_PROVIDER_GOOGLE_ENABLED: true
-      AUTH_GOOGLE_CLIENT_ID: 
-      AUTH_GOOGLE_CLIENT_SECRET: 
-      AUTH_GOOGLE_CALLBACK_URL: https:///auth/google/redirect
-      AUTH_GOOGLE_APIS_CALLBACK_URL: https:///auth/google-apis/get-access-token
-      APP_SECRET: ${APP_SECRET}
-    depends_on:
-      change-vol-ownership:
-        condition: service_completed_successfully
-      db:
-        condition: service_healthy
-    healthcheck:
-      test: curl --fail http://localhost:3000/healthz
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: always
-    volumes:
-      - name: server-local-data
-        mountPath: /app/packages/twenty-server/${STORAGE_LOCAL_PATH:-.local-storage}
-        subPath: server-local-data
-      - name: docker-data
-        mountPath: /app/docker-data
-        subPath: docker-data
+    server:
+        image: twentycrm/twenty:${TAG:-latest}
+        replicas: 1
+        resurces:
+        memory: 256MiB
+        ports:
+        - 3000
+        environment:
+            PORT: 3000
+            PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
+            SERVER_URL: http://127.0.0.1:3000
+            REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+            STORAGE_TYPE: ${STORAGE_TYPE}
+            STORAGE_S3_REGION: ${STORAGE_S3_REGION}
+            STORAGE_S3_NAME: ${STORAGE_S3_NAME}
+            STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+            MESSAGING_PROVIDER_GMAIL_ENABLED: true
+            CALENDAR_PROVIDER_GOOGLE_ENABLED: true
+            AUTH_GOOGLE_CLIENT_ID: 
+            AUTH_GOOGLE_CLIENT_SECRET: 
+            AUTH_GOOGLE_CALLBACK_URL: https:///auth/google/redirect
+            AUTH_GOOGLE_APIS_CALLBACK_URL: https:///auth/google-apis/get-access-token
+            APP_SECRET: ${APP_SECRET}
+        depends_on:
+            change-vol-ownership:
+                condition: service_completed_successfully
+            db:
+                condition: service_healthy
+        healthcheck:
+            test: curl --fail http://localhost:3000/healthz
+            interval: 5s
+            timeout: 5s
+            retries: 10
+        restart: always
+        volumes:
+        -   name: server-local-data
+            mountPath: /app/packages/twenty-server/${STORAGE_LOCAL_PATH:-.local-storage}
+            subPath: server-local-data
+        -   name: docker-data
+            mountPath: /app/docker-data
+            subPath: docker-data
 
-  worker:
-    image: twentycrm/twenty:${TAG:-latest}
-    replicas: 1
-    resources:
-      memory: 256MiB
-    command: ["yarn", "worker:prod"]
-    environment:
-      PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
-      SERVER_URL: ${SERVER_URL}
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      DISABLE_DB_MIGRATIONS: "true"
-      STORAGE_TYPE: ${STORAGE_TYPE}
-      STORAGE_S3_REGION: ${STORAGE_S3_REGION}
-      STORAGE_S3_NAME: ${STORAGE_S3_NAME}
-      STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
-      APP_SECRET: ${APP_SECRET}
-    depends_on:
-      db:
-        condition: service_healthy
-      server:
-        condition: service_healthy
-      restart: always
+    worker:
+        image: twentycrm/twenty:${TAG:-latest}
+        replicas: 1
+        resources:
+            memory: 256MiB
+        command: ["yarn", "worker:prod"]
+        environment:
+            PG_DATABASE_URL: postgres://${PG_DATABASE_USER:-postgres}:${PG_DATABASE_PASSWORD:-postgres}@${PG_DATABASE_HOST:-db}:${PG_DATABASE_PORT:-5432}/default
+        SERVER_URL: ${SERVER_URL}
+        REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+        DISABLE_DB_MIGRATIONS: "true"
+        STORAGE_TYPE: ${STORAGE_TYPE}
+        STORAGE_S3_REGION: ${STORAGE_S3_REGION}
+        STORAGE_S3_NAME: ${STORAGE_S3_NAME}
+        STORAGE_S3_ENDPOINT: ${STORAGE_S3_ENDPOINT}
+        APP_SECRET: ${APP_SECRET}
+        depends_on:
+        db:
+            condition: service_healthy
+        server:
+            condition: service_healthy
+        restart: always
 
-  db:
-    image: twentycrm/twenty-postgres-spilo:${TAG:-latest}
-    replicas: 1
-    resources:
-      memory: 512MiB
-    volumes:
-    - name: db-data
-      mountPath: /home/postgres/pgdata
-      subPath: db-data
-    environment:
-      PGUSER_SUPERUSER: ${PG_DATABASE_USER:-postgres}
-      PGPASSWORD_SUPERUSER: ${PG_DATABASE_PASSWORD:-postgres}
-      ALLOW_NOSSL: "true"
-      SPILO_PROVIDER: "local"
-    healthcheck:
-      test: pg_isready -U ${PG_DATABASE_USER:-postgres} -h localhost -d postgres
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: always
+    db:
+        image: twentycrm/twenty-postgres-spilo:${TAG:-latest}
+        replicas: 1
+        resources:
+            memory: 512MiB
+        volumes:
+        -   name: db-data
+            mountPath: /home/postgres/pgdata
+            subPath: db-data
+        environment:
+            PGUSER_SUPERUSER: ${PG_DATABASE_USER:-postgres}
+            PGPASSWORD_SUPERUSER: ${PG_DATABASE_PASSWORD:-postgres}
+            ALLOW_NOSSL: "true"
+            SPILO_PROVIDER: "local"
+        healthcheck:
+            test: pg_isready -U ${PG_DATABASE_USER:-postgres} -h localhost -d postgres
+            interval: 5s
+            timeout: 5s
+            retries: 10
+        restart: always
 
-  redis:
-    image: redis
-    replicas: 1
-    resources:
-      memory: 128MiB
-    restart: always
+    redis:
+        image: redis
+        replicas: 1
+        resources:
+            memory: 128MiB
+        restart: always
 
 network:
 
     domains:
-    
+
         server: ~
         worker: ~
         db: ~
@@ -145,19 +145,19 @@ network:
             port: 3000/TCP
 
         worker:
-          domain: worker
-          path: /
-          service: worker
-          port: 3000/TCP
+            domain: worker
+            path: /
+            service: worker
+            port: 3000/TCP
 
         db:
-          domain: db
-          path: /
-          service: db
-          port: 5432/TCP
+            domain: db
+            path: /
+            service: db
+            port: 5432/TCP
 
         redis:
-            domain: redis
-            path: /
-            service: redis
-            port: 6379/TCP
+                domain: redis
+                path: /
+                service: redis
+                port: 6379/TCP
