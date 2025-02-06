@@ -1,19 +1,24 @@
 version: 1
 
 volumes:
+
   docker-data:
     type: ssd
     size: 1GiB
+
   db-data:
     type: ssd
     size: 1GiB
+
   server-local-data:
     type: ssd
     size: 1GiB
 
 containers:
+
   change-vol-ownership:
     image: ubuntu
+    replicas: 1
     user: root
     resources:
       memory: 64MiB
@@ -125,6 +130,7 @@ containers:
 network:
 
     domains:
+    
         server: ~
         worker: ~
         db: ~
